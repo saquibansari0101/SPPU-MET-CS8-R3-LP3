@@ -1,6 +1,7 @@
-# Abhishek Pralhad Bhalerao
-# B.E. Computer Engineering - B Division
-# Seat Number - B150474215
-# Roll Number - 4
 
-SUBJECT - Laboratory Practice 4 - ML & ICS
+# Laboratory Practice 4 - ML & ICS Practicals
+
+## Name
+## B.E. Computer Engineering 2022
+## Seat Number - 
+## Roll Number - 

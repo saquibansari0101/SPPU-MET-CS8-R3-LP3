@@ -1,4 +1,4 @@
-# Abhishek Bhalerao
+
 ### BE. Comp. METIOE, Nashik
 
 

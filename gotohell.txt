@@ -1,0 +1,839 @@
+ML1-----------------------------------------------------------------
+
+# Importing the libraries
+# import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+
+# Importing the dataset
+dataset = pd.read_csv('driving_risk.csv')
+X = dataset.iloc[:, :-1].values
+y = dataset.iloc[:, 1].values
+
+# Splitting the dataset into the Training set and Test set
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 1/3, random_state = 0)
+
+# Fitting Simple Linear Regression to the Training set
+from sklearn.linear_model import LinearRegression
+regressor = LinearRegression()
+regressor.fit(X_train, y_train)
+# Predicting the Test set results
+y_pred = regressor.predict(X_test)
+# Visualising the Training set results
+plt.scatter(X_train, y_train, color = 'red')
+plt.plot(X_train, regressor.predict(X_train), color = 'blue')
+plt.title('Driving hours vs Risk Score (Training set)')
+plt.xlabel('Driving Hours')
+plt.ylabel('Risk Score')
+plt.show()
+# Visualising the Test set results
+plt.scatter(X_test, y_test, color = 'green')
+plt.plot(X_train, regressor.predict(X_train), color = 'blue')
+plt.title('Driving Hours vs Risk Score (Test set)')
+plt.xlabel('Driving Hours')
+plt.ylabel('Risk Score')
+plt.show()
+print("")
+print("Equation of best fit line is y = ",regressor.intercept_," + ",regressor.coef_, " * X")
+inputhours = 17
+print("Example driving hours: ",inputhours)
+print("Equation of best fit line is y = ",regressor.intercept_," + ",regressor.coef_, " * ",inputhours)
+outputrisk = regressor.intercept_+regressor.coef_* inputhours
+print("Output RISK Score is: ",outputrisk)
+
+#1 #DATASET  @hours_spent(num)	@risk_score(num)
+
+
+
+
+ML2-----------------------------------------------------------------
+
+#import packages
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+#reading Dataset
+dataset=pd.read_csv("dtc_data.csv")
+X=dataset.iloc[:,:-1]
+y=dataset.iloc[:,5].values
+
+#Perform Label encoding
+from sklearn.preprocessing import LabelEncoder
+labelencoder_X = LabelEncoder()
+
+X = X.apply(LabelEncoder().fit_transform)
+print (X)
+
+from sklearn.tree import DecisionTreeClassifier
+regressor=DecisionTreeClassifier()
+regressor.fit(X.iloc[:,1:5],y)
+
+
+#Predict value for the given expression
+X_in=np.array([1,1,0,0])
+
+y_pred=regressor.predict([X_in])
+print ("Prediction:", y_pred)
+
+from six import StringIO  
+from IPython.display import Image  
+from sklearn.tree import export_graphviz
+import pydotplus
+
+dot_data = StringIO()
+
+export_graphviz(regressor, out_file=dot_data, filled=True, rounded=True, special_characters=True)
+
+graph = pydotplus.graph_from_dot_data(dot_data.getvalue()) 
+graph.write_png('tree.png')
+
+#2 #DATASET @id(num)	@age(<21/21-35/>35)	@income(High/Low/Medium)	@gender(Female/Male)	@marital_status(Single/Married)	@buys(Yes/No)
+
+
+
+
+ML3-----------------------------------------------------------------
+
+# K-Nearest Neighbors (K-NN)
+
+# Importing the libraries
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+# Importing the dataset
+dataset = pd.read_csv('Social_Network_Ads.csv')
+X = dataset.iloc[:, [2, 3]].values
+y = dataset.iloc[:, 4].values
+# Splitting the dataset into the Training set and Test set
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.25, random_state = 0)
+# Feature Scaling
+from sklearn.preprocessing import StandardScaler
+sc = StandardScaler()
+X_train = sc.fit_transform(X_train)
+X_test = sc.transform(X_test)
+# Fitting K-NN to the Training set
+from sklearn.neighbors import KNeighborsClassifier
+classifier = KNeighborsClassifier(n_neighbors = 5, metric = 'minkowski', p = 2)
+classifier.fit(X_train, y_train)
+# Predicting the Test set results
+y_pred = classifier.predict(X_test)
+# Making the Confusion Matrix
+from sklearn.metrics import confusion_matrix
+cm = confusion_matrix(y_test, y_pred)
+# Visualising the Training set results
+from matplotlib.colors import ListedColormap
+X_set, y_set = X_train, y_train
+X1, X2 = np.meshgrid(np.arange(start = X_set[:, 0].min() - 1, stop = X_set[:, 0].max() + 1, step = 0.01),
+                     np.arange(start = X_set[:, 1].min() - 1, stop = X_set[:, 1].max() + 1, step = 0.01))
+plt.contourf(X1, X2, classifier.predict(np.array([X1.ravel(), X2.ravel()]).T).reshape(X1.shape),
+             alpha = 0.75, cmap = ListedColormap(('red', 'green')))
+plt.xlim(X1.min(), X1.max())
+plt.ylim(X2.min(), X2.max())
+for i, j in enumerate(np.unique(y_set)):
+    plt.scatter(X_set[y_set == j, 0], X_set[y_set == j, 1],
+                c = ListedColormap(('red', 'green'))(i), label = j)
+plt.title('K-NN (Training set)')
+plt.xlabel('Age')
+plt.ylabel('Estimated Salary')
+plt.legend()
+plt.show()
+# Visualising the Test set results
+from matplotlib.colors import ListedColormap
+X_set, y_set = X_test, y_test
+X1, X2 = np.meshgrid(np.arange(start = X_set[:, 0].min() - 1, stop = X_set[:, 0].max() + 1, step = 0.01),
+                     np.arange(start = X_set[:, 1].min() - 1, stop = X_set[:, 1].max() + 1, step = 0.01))
+plt.contourf(X1, X2, classifier.predict(np.array([X1.ravel(), X2.ravel()]).T).reshape(X1.shape),
+             alpha = 0.75, cmap = ListedColormap(('red', 'green')))
+plt.xlim(X1.min(), X1.max())
+plt.ylim(X2.min(), X2.max())
+for i, j in enumerate(np.unique(y_set)):
+    plt.scatter(X_set[y_set == j, 0], X_set[y_set == j, 1],
+                c = ListedColormap(('red', 'green'))(i), label = j)
+plt.title('K-NN (Test set)')
+plt.xlabel('Age')
+plt.ylabel('Estimated Salary')
+plt.legend()
+plt.show()
+
+#3 #DATASET @User ID(num)	@Gender(Male/Female)	@Age(num)	@EstimatedSalary(num)	@Purchased(0/1)
+
+
+ML4-----------------------------------------------------------------
+
+# Importing the libraries
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+
+# Importing the dataset
+dataset = pd.read_csv('Mall_Customers.csv')
+X = dataset.iloc[:, [3, 4]].values
+# y = dataset.iloc[:, 3].values
+
+# Using the elbow method to find the optimal number of clusters
+from sklearn.cluster import KMeans
+wcss = []
+for i in range(1, 11):
+    kmeans = KMeans(n_clusters = i, init = 'k-means++', random_state = 42)
+    kmeans.fit(X)
+    wcss.append(kmeans.inertia_)
+plt.plot(range(1, 11), wcss)
+plt.title('The Elbow Method')
+plt.xlabel('Number of clusters')
+plt.ylabel('WCSS')
+plt.show()
+# Fitting K-Means to the dataset
+kmeans = KMeans(n_clusters = 5, init = 'k-means++', random_state = 42)
+y_kmeans = kmeans.fit_predict(X)
+# Visualising the clusters
+plt.scatter(X[y_kmeans == 0, 0], X[y_kmeans == 0, 1], s = 100, c = 'red', label = 'Cluster 1')
+plt.scatter(X[y_kmeans == 1, 0], X[y_kmeans == 1, 1], s = 100, c = 'blue', label = 'Cluster 2')
+plt.scatter(X[y_kmeans == 2, 0], X[y_kmeans == 2, 1], s = 100, c = 'green', label = 'Cluster 3')
+plt.scatter(X[y_kmeans == 3, 0], X[y_kmeans == 3, 1], s = 100, c = 'cyan', label = 'Cluster 4')
+plt.scatter(X[y_kmeans == 4, 0], X[y_kmeans == 4, 1], s = 100, c = 'magenta', label = 'Cluster 5')
+plt.scatter(kmeans.cluster_centers_[:, 0], kmeans.cluster_centers_[:, 1], s = 300, c = 'yellow', label = 'Centroids')
+plt.title('Clusters of customers')
+plt.xlabel('Annual Income (k$)')
+plt.ylabel('Spending Score (1-100)')
+plt.legend()
+plt.show()
+
+
+
+
+#4 #DATASET @CustomerID(num)	@Genre(Male/Female)	@Age(num)	@Annual Income (k$)(num)	Spending Score (1-100)(1-100)
+
+
+
+
+#ICS1-----------------------------------------------------------------
+
+#initialization
+
+IP = [2, 6, 3, 1, 4, 8, 5, 7]
+IPi = [4, 1, 3, 5, 7, 2, 8, 6]
+E = [4, 1, 2, 3, 2, 3, 4, 1]
+S0 = [
+        [1, 0, 3, 2],
+        [3, 2, 1, 0],
+        [0, 2, 1, 3],
+        [3, 1, 3, 2]
+     ]
+S1 = [
+        [0, 1, 2, 3],
+        [2, 0, 1, 3],
+        [3, 0, 1, 0],
+        [2, 1, 0, 3]
+     ]
+P4 = [2, 4, 3, 1]
+P10 = [3, 5, 2, 7, 4, 10, 1, 9, 8, 6]
+P8 = [6, 3, 7, 4, 8, 5, 10, 9]
+
+#Function Definitions
+
+def permutation(pattern, key):
+    permuted = ""
+    for i in pattern:
+        permuted += key[i-1] 
+    return permuted
+
+def generate_first(left, right):
+    left = left[1:] + left[:1]
+    right = right[1:] + right[:1]
+    key = left + right
+    return permutation(P8, key)
+
+def generate_second(left, right):
+    left = left[3:] + left[:3]
+    right = right[3:] + right[:3]
+    key = left + right
+    return permutation(P8, key)
+
+def transform(right, key):
+    extended = permutation(E, right)
+    print("Extended Permutation: ", extended)
+    xor_cipher = bin(int(extended, 2) ^ int(key, 2))[2:].zfill(8)
+    print("After applying xor with round key ", xor_cipher)
+    xor_left = xor_cipher[:4]
+    xor_right = xor_cipher[4:]
+    new_left = Sbox(xor_left, S0)
+    new_right = Sbox(xor_right, S1)
+    print("After applying S-box ")
+    print("Left: S0= ", new_left)
+    print("Right: S1= ", new_right)
+    p4permute = permutation(P4, new_left + new_right)
+    print("After applying P4 permutation ", p4permute)
+    return p4permute 
+
+def Sbox(data, box):
+    row = int(data[0] + data[3], 2)
+    column = int(data[1] + data[2], 2)
+    return bin(box[row][column])[2:].zfill(2)   
+
+def encrypt(left, right, key):
+    cipher = int(left, 2) ^ int(transform(right, key), 2)
+    print("After applying final xor= ", bin(cipher)[2:].zfill(4))
+    return right, bin(cipher)[2:].zfill(4)
+
+def decrypt(left, right, key):
+    plain = int(left, 2) ^ int(transform(right, key), 2)
+    print("After applying final xor= ", bin(plain)[2:].zfill(4))
+    return right, bin(plain)[2:].zfill(4)
+
+
+#User Input
+
+key = "1010000010"
+plaintext = "01110010"
+
+
+userInput = False
+
+
+if userInput == True:
+    print("Start the S-DES algorithim.")
+    key = input("Enter a 10-bit key: ")
+    if len(key) != 10:
+        raise Exception("Check the input")
+
+
+    plaintext = input("Enter 8-bit plaintext: ")
+    if len(plaintext) != 8:
+        raise Exception("Check the input")
+
+
+#Encryption Block
+
+print("Input KEY: ", key)
+print("Input PLAINTEXT: ", plaintext)
+
+p10key = permutation(P10, key)
+print("\nAfter applying permutation P10 on KEY: ",p10key)
+
+
+print("\nAfter split")
+left_key = p10key[:len(p10key)//2]
+right_key = p10key[len(p10key)//2:]
+print("Left key =: ",left_key,"   Right key =: ",right_key)
+
+
+
+first_key = generate_first(left_key, right_key)
+second_key = generate_second(left_key, right_key)
+print("\nFirst key K1 =: ",first_key)
+print("Second key K2=: ",second_key)
+
+
+print("Encrypt the message")
+initial_permutation = permutation(IP, plaintext)
+print("Initial Permutation =: ",initial_permutation)
+
+print("\nEncryption Function 1 ")
+print("IP Split ")
+
+left_data = initial_permutation[:len(initial_permutation)//2]
+right_data = initial_permutation[len(initial_permutation)//2:]
+print("Left data =: ",left_data)
+print("Right data =: ",right_data)
+
+left, right = encrypt(left_data, right_data, first_key)
+print("\nEncrypted data =: ",left+right)
+
+
+print("\nEncryption Function 2 ")
+right, left  = encrypt(left, right, second_key)
+print("Encrypted data =: ",left+right)
+
+cipheredText= permutation(IPi, left + right)
+print("\nCiphertext =: ",  cipheredText )
+
+
+#Decryption Block
+
+print("Input KEY: ", key)
+print("Above CipherText: ", cipheredText)
+
+p10key = permutation(P10, key)
+print("\nAfter applying permutation P10 on KEY: ",p10key)
+
+
+print("\nAfter split")
+left_key = p10key[:len(p10key)//2]
+right_key = p10key[len(p10key)//2:]
+print("Left key =: ",left_key,"   Right key =: ",right_key)
+
+
+
+first_key = generate_first(left_key, right_key)
+second_key = generate_second(left_key, right_key)
+print("\nFirst key K1 =: ",first_key)
+print("Second key K2=: ",second_key)
+
+
+print("\nDecrypt the message")
+initial_permutation = permutation(IP, cipheredText)
+print("Initial Permutation =: ",initial_permutation)
+
+print("\nDecryption Function 1 ")
+print("IP Split ")
+left_data = initial_permutation[:len(initial_permutation)//2]
+right_data = initial_permutation[len(initial_permutation)//2:]
+print("Left data =: ",left_data)
+print("Right data =: ",right_data)
+
+left, right = decrypt(left_data, right_data, second_key)
+print("Decrypted data =: ",left+right)
+
+print("\nDecryption Function 2 ")
+right,left,    = decrypt(left, right, first_key)
+print("Decrypted data =: ",left+right)
+
+print("\nPlain text =: ", permutation(IPi, left + right))
+
+
+
+
+#ICS2-----------------------------------------------------------------
+
+from Operations import Operations
+class SAES :
+
+    plaintext_block_size = 16
+    key_size = 16
+    no_of_rounds = 2
+    substitution_box = {
+        '0000': '1001', 
+        '0001': '0100',
+        '0010': '1010',
+        '0011': '1011',
+        '0100': '1101',
+        '0101': '0001',
+        '0110': '1000',
+        '0111': '0101',
+        '1000': '0110',
+        '1001': '0010',
+        '1010': '0000',
+        '1011': '0011',
+        '1100': '1100',
+        '1101': '1110',
+        '1110': '1111',
+        '1111': '0111',
+    }
+    inv_substitution_box = {
+        '1001': '0000', 
+        '0100': '0001',
+        '1010': '0010',
+        '1011': '0011',
+        '1101': '0100',
+        '0001': '0101',
+        '1000': '0110',
+        '0101': '0111',
+        '0110': '1000',
+        '0010': '1001',
+        '0000': '1010',
+        '0011': '1011',
+        '1100': '1100',
+        '1110': '1101',
+        '1111': '1110',
+        '0111': '1111',
+    }
+
+    mix_column_table = {
+        '2': '02468ACE3175B9FD',
+        '4': '048C37BF62EA51D9',
+        '9': '09182B3A4D5C6F7E'
+    }
+    mix_column_matrix = [[1, 4], [4, 1]]
+    inv_mix_column_matrix = [[9, 2], [2, 9]]
+    round_constants = ['80', '30']
+    is_padded = False
+
+    @classmethod
+    def __perform_substitution(cls, data, substitution_box) :
+        binary_rep = "{:08b}".format(data)
+        ans = cls.substitution_box[binary_rep[:4]] + cls.substitution_box[binary_rep[4:]]
+        return int(ans, 2)
+
+    @classmethod
+    def generate_subkeys(cls, key) :
+        binary_rep = "{:016b}".format(key)
+        subkeys = []
+        subkeys.append(int(binary_rep[:8], 2))
+        subkeys.append(int(binary_rep[8:], 2))
+
+        for i in range(cls.no_of_rounds) :
+            temp = Operations.circular_left_shift(subkeys[-1], 4, 8)
+            temp = cls.__perform_substitution(temp, cls.substitution_box)
+            temp = Operations.xor_operation(temp, int(cls.round_constants[i], 16))
+            key1 = Operations.xor_operation(temp, subkeys[-2])
+            subkeys.append(key1)
+            key2 = Operations.xor_operation(subkeys[-2], subkeys[-1])
+            subkeys.append(key2)
+            
+        return subkeys
+            
+
+    @classmethod
+    def __initial_round(cls, plaintext_blocks, keys) :
+        joint_key = int("{:08b}".format(keys[0]) + "{:08b}".format(keys[1]), 2)
+        result_blocks = []
+        for i in plaintext_blocks :
+            xored = Operations.xor_operation(int(i, 2), joint_key)
+            xored = "{:016b}".format(xored)
+            result_blocks.append(xored)
+        
+        return result_blocks
+
+    @classmethod
+    def __convert_into_matrix(cls, plaintext_blocks) :
+        plaintext_matrix = []
+        for i in range(len(plaintext_blocks)) :
+            plaintext_matrix.append([[0, 0], [0, 0]])
+
+        for i in range(len(plaintext_blocks)) :
+            plaintext_matrix[i][0][0] = plaintext_blocks[i][:4]
+            plaintext_matrix[i][1][0] = plaintext_blocks[i][4:8]
+            plaintext_matrix[i][0][1] = plaintext_blocks[i][8:12]
+            plaintext_matrix[i][1][1] = plaintext_blocks[i][12:]
+        return plaintext_matrix
+
+    @classmethod
+    def __perform_encryption_round(cls, plaintext_blocks, keys, round_number) :
+
+        b0 = (keys[0] & 0xF0) >> 4
+        b1 = keys[0] & 0x0F
+        b2 = (keys[1] & 0xF0) >> 4
+        b3 = keys[1] & 0x0F
+
+        # Subsitution
+        for i in range(len(plaintext_blocks)) :
+            plaintext_blocks[i][0][0] = int(cls.substitution_box[plaintext_blocks[i][0][0]], 2)
+            plaintext_blocks[i][1][0] = int(cls.substitution_box[plaintext_blocks[i][1][0]], 2)
+            plaintext_blocks[i][0][1] = int(cls.substitution_box[plaintext_blocks[i][0][1]], 2)
+            plaintext_blocks[i][1][1] = int(cls.substitution_box[plaintext_blocks[i][1][1]], 2)
+
+        # Shift Rows
+        for i in range(len(plaintext_blocks)) :
+            plaintext_blocks[i][1][0], plaintext_blocks[i][1][1] = \
+                plaintext_blocks[i][1][1], plaintext_blocks[i][1][0]
+
+        # Mix columns
+        if round_number == 1 :
+            for i in range(len(plaintext_blocks)) :
+                first_operand = plaintext_blocks[i][0][0]
+                second_operand = int(cls.mix_column_table['4'][plaintext_blocks[i][1][0]], 16)
+                val1 = Operations.xor_operation(first_operand, second_operand)
+
+                first_operand = plaintext_blocks[i][0][1]
+                second_operand = int(cls.mix_column_table['4'][plaintext_blocks[i][1][1]], 16)
+                val2 = Operations.xor_operation(first_operand, second_operand)
+
+                first_operand = int(cls.mix_column_table['4'][plaintext_blocks[i][0][0]], 16)
+                second_operand = plaintext_blocks[i][1][0]
+                val3 = Operations.xor_operation(first_operand, second_operand)
+
+                first_operand = int(cls.mix_column_table['4'][plaintext_blocks[i][0][1]], 16)
+                second_operand = plaintext_blocks[i][1][1]
+                val4 = Operations.xor_operation(first_operand, second_operand)
+    
+                plaintext_blocks[i][0][0] = val1
+                plaintext_blocks[i][0][1] = val2
+                plaintext_blocks[i][1][0] = val3
+                plaintext_blocks[i][1][1] = val4
+
+        # Add round key
+        for i in range(len(plaintext_blocks)) :
+            plaintext_blocks[i][0][0] = "{:04b}".format(Operations.xor_operation( \
+                plaintext_blocks[i][0][0], b0))
+            plaintext_blocks[i][1][0] = "{:04b}".format(Operations.xor_operation( \
+                plaintext_blocks[i][1][0], b1))
+            plaintext_blocks[i][0][1] = "{:04b}".format(Operations.xor_operation( \
+                plaintext_blocks[i][0][1], b2))
+            plaintext_blocks[i][1][1] = "{:04b}".format(Operations.xor_operation( \
+                plaintext_blocks[i][1][1], b3))
+
+        return plaintext_blocks
+
+    @classmethod
+    def encrypt(cls, plaintext, keys) :
+        if len(plaintext) % 2 :
+            plaintext = plaintext + '0'
+            cls.is_padded = True
+        
+        plaintext_blocks = []
+        for i in range(0, len(plaintext), 2) :
+            temp = "{:08b}".format(ord(plaintext[i])) + "{:08b}".format(ord(plaintext[i + 1]))
+            plaintext_blocks.append(temp)
+
+        plaintext_blocks = cls.__initial_round(plaintext_blocks, keys[0:2])
+        plaintext_matrix = cls.__convert_into_matrix(plaintext_blocks)
+        plaintext_matrix = cls.__perform_encryption_round(plaintext_matrix, keys[2:4], 1)
+        plaintext_matrix = cls.__perform_encryption_round(plaintext_matrix, keys[4:], 2)
+        
+        ciphertext = []
+        for i in plaintext_matrix :
+            x = i[0][0]+ i[1][0] + i[0][1] + i[1][1]
+            ciphertext.append(x)
+        return ciphertext
+
+        
+    @classmethod
+    def __perform_decryption_round(cls, ciphertext_matrix, keys, round_number) :
+        b0 = (keys[0] & 0xF0) >> 4
+        b1 = keys[0] & 0x0F
+        b2 = (keys[1] & 0xF0) >> 4
+        b3 = keys[1] & 0x0F
+
+        # Inverse shift rows
+        for i in range(len(ciphertext_matrix)) :
+            ciphertext_matrix[i][1][0], ciphertext_matrix[i][1][1] = \
+                ciphertext_matrix[i][1][1], ciphertext_matrix[i][1][0]
+
+        # Inverse Substitution
+        for i in range(len(ciphertext_matrix)) :
+            ciphertext_matrix[i][0][0] = int(cls.inv_substitution_box[ciphertext_matrix[i][0][0]], 2)
+            ciphertext_matrix[i][1][0] = int(cls.inv_substitution_box[ciphertext_matrix[i][1][0]], 2)
+            ciphertext_matrix[i][0][1] = int(cls.inv_substitution_box[ciphertext_matrix[i][0][1]], 2)
+            ciphertext_matrix[i][1][1] = int(cls.inv_substitution_box[ciphertext_matrix[i][1][1]], 2)
+
+        # Add round key
+        for i in range(len(ciphertext_matrix)) :
+            ciphertext_matrix[i][0][0] = Operations.xor_operation(ciphertext_matrix[i][0][0], b0)
+            ciphertext_matrix[i][1][0] = Operations.xor_operation(ciphertext_matrix[i][1][0], b1)
+            ciphertext_matrix[i][0][1] = Operations.xor_operation(ciphertext_matrix[i][0][1], b2)
+            ciphertext_matrix[i][1][1] = Operations.xor_operation(ciphertext_matrix[i][1][1], b3)
+
+        # Inverse mix columns
+        if round_number == 1 :
+            for i in range(len(ciphertext_matrix)) :
+                first_operand = int(cls.mix_column_table['9'][ciphertext_matrix[i][0][0]], 16)
+                second_operand = int(cls.mix_column_table['2'][ciphertext_matrix[i][1][0]], 16)
+                val1 = Operations.xor_operation(first_operand, second_operand)
+
+                first_operand = int(cls.mix_column_table['9'][ciphertext_matrix[i][0][1]], 16)
+                second_operand = int(cls.mix_column_table['2'][ciphertext_matrix[i][1][1]], 16)
+                val2 = Operations.xor_operation(first_operand, second_operand)
+
+                first_operand = int(cls.mix_column_table['2'][ciphertext_matrix[i][0][0]], 16)
+                second_operand = int(cls.mix_column_table['9'][ciphertext_matrix[i][1][0]], 16)
+                val3 = Operations.xor_operation(first_operand, second_operand)
+
+                first_operand = int(cls.mix_column_table['2'][ciphertext_matrix[i][0][1]], 16)
+                second_operand = int(cls.mix_column_table['9'][ciphertext_matrix[i][1][1]], 16)
+                val4 = Operations.xor_operation(first_operand, second_operand)
+    
+                ciphertext_matrix[i][0][0] = val1
+                ciphertext_matrix[i][0][1] = val2
+                ciphertext_matrix[i][1][0] = val3
+                ciphertext_matrix[i][1][1] = val4
+
+        for i in range(len(ciphertext_matrix)) :
+            ciphertext_matrix[i][0][0] = "{:04b}".format(ciphertext_matrix[i][0][0])
+            ciphertext_matrix[i][1][0] = "{:04b}".format(ciphertext_matrix[i][1][0])
+            ciphertext_matrix[i][0][1] = "{:04b}".format(ciphertext_matrix[i][0][1])
+            ciphertext_matrix[i][1][1] = "{:04b}".format(ciphertext_matrix[i][1][1])
+
+        return ciphertext_matrix
+
+
+    @classmethod
+    def decrypt(cls, ciphertext, keys) :
+        ciphertext_blocks = []
+        for i in ciphertext :
+            ciphertext_blocks.append("{:016b}".format(int(i, 16)))
+
+        ciphertext_blocks = SAES.__initial_round(ciphertext_blocks, keys[0:2])
+        ciphertext_matrix = SAES.__convert_into_matrix(ciphertext_blocks)
+        ciphertext_matrix = SAES.__perform_decryption_round(ciphertext_matrix, keys[2:4], 1)
+        plaintext_matrix = SAES.__perform_decryption_round(ciphertext_matrix, keys[4:], 2)
+
+        plaintext = []
+        for i in plaintext_matrix :
+            x = i[0][0]+ i[1][0] + i[0][1] + i[1][1]
+            plaintext.append(x)
+
+        if cls.is_padded :
+            plaintext[-1] = plaintext[-1][:-7]
+
+        return plaintext
+
+
+#ICS3-----------------------------------------------------------------
+
+from random import randint
+
+if __name__ == '__main__':
+
+	# Both the persons will be agreed upon the
+	# public keys G and P
+	# A prime number P is taken
+	P = 23
+	
+	# A primitve root for P, G is taken
+	G = 9
+	
+	
+	print('The Value of P is :%d'%(P))
+	print('The Value of G is :%d'%(G))
+	
+	# Alice will choose the private key a
+	a = 4
+	print('The Private Key a for Alice is :%d'%(a))
+	
+	# gets the generated key
+	x = int(pow(G,a,P))
+	
+	# Bob will choose the private key b
+	b = 3
+	print('The Private Key b for Bob is :%d'%(b))
+	
+	# gets the generated key
+	y = int(pow(G,b,P))
+	
+	
+	# Secret key for Alice
+	ka = int(pow(y,a,P))
+	
+	# Secret key for Bob
+	kb = int(pow(x,b,P))
+	
+	print('Secret key for the Alice is : %d'%(ka))
+	print('Secret Key for the Bob is : %d'%(kb))
+
+
+#ICS4-----------------------------------------------------------------
+
+
+import random
+
+
+'''
+Euclid's algorithm for determining the greatest common divisor
+Use iteration to make it faster for larger integers
+'''
+
+
+def gcd(a, b):
+    while b != 0:
+        a, b = b, a % b
+    return a
+
+
+'''
+Euclid's extended algorithm for finding the multiplicative inverse of two numbers
+'''
+
+
+def multiplicative_inverse(e, phi):
+    d = 0
+    x1 = 0
+    x2 = 1
+    y1 = 1
+    temp_phi = phi
+
+    while e > 0:
+        temp1 = temp_phi//e
+        temp2 = temp_phi - temp1 * e
+        temp_phi = e
+        e = temp2
+
+        x = x2 - temp1 * x1
+        y = d - temp1 * y1
+
+        x2 = x1
+        x1 = x
+        d = y1
+        y1 = y
+
+    if temp_phi == 1:
+        return d + phi
+
+
+'''
+Tests to see if a number is prime.
+'''
+
+
+def is_prime(num):
+    if num == 2:
+        return True
+    if num < 2 or num % 2 == 0:
+        return False
+    for n in range(3, int(num**0.5)+2, 2):
+        if num % n == 0:
+            return False
+    return True
+
+
+def generate_key_pair(p, q):
+    if not (is_prime(p) and is_prime(q)):
+        raise ValueError('Both numbers must be prime.')
+    elif p == q:
+        raise ValueError('p and q cannot be equal')
+    # n = pq
+    n = p * q
+
+    # Phi is the totient of n
+    phi = (p-1) * (q-1)
+
+    # Choose an integer e such that e and phi(n) are coprime
+    e = random.randrange(1, phi)
+
+    # Use Euclid's Algorithm to verify that e and phi(n) are coprime
+    g = gcd(e, phi)
+    while g != 1:
+        e = random.randrange(1, phi)
+        g = gcd(e, phi)
+
+    # Use Extended Euclid's Algorithm to generate the private key
+    d = multiplicative_inverse(e, phi)
+
+    # Return public and private key_pair
+    # Public key is (e, n) and private key is (d, n)
+    return ((e, n), (d, n))
+
+
+def encrypt(pk, plaintext):
+    # Unpack the key into it's components
+    key, n = pk
+    # Convert each letter in the plaintext to numbers based on the character using a^b mod m
+    cipher = [pow(ord(char), key, n) for char in plaintext]
+    # Return the array of bytes
+    return cipher
+
+
+def decrypt(pk, ciphertext):
+    # Unpack the key into its components
+    key, n = pk
+    # Generate the plaintext based on the ciphertext and key using a^b mod m
+    aux = [str(pow(char, key, n)) for char in ciphertext]
+    # Return the array of bytes as a string
+    plain = [chr(int(char2)) for char2 in aux]
+    return ''.join(plain)
+
+
+if __name__ == '__main__':
+    '''
+    Detect if the script is being run directly by the user
+    '''
+    print("===========================================================================================================")
+    print("================================== RSA Encryptor / Decrypter ==============================================")
+    print(" ")
+
+    p = int(input(" - Enter a prime number (17, 19, 23, etc): "))
+    q = int(input(" - Enter another prime number (Not one you entered above): "))
+
+    print(" - Generating your public / private key-pairs now . . .")
+
+    public, private = generate_key_pair(p, q)
+
+    print(" - Your public key is ", public, " and your private key is ", private)
+
+    message = input(" - Enter a message to encrypt with your public key: ")
+    encrypted_msg = encrypt(public, message)
+
+    print(" - Your encrypted message is: ", ''.join(map(lambda x: str(x), encrypted_msg)))
+    print(" - Decrypting message with private key ", private, " . . .")
+    print(" - Your message is: ", decrypt(private, encrypted_msg))

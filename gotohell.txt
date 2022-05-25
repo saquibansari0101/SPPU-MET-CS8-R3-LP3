@@ -1,46 +1,41 @@
 ML1-----------------------------------------------------------------
 
-# Importing the libraries
-# import numpy as np
+#importing packages
 import matplotlib.pyplot as plt
 import pandas as pd
 
-# Importing the dataset
-dataset = pd.read_csv('driving_risk.csv')
-X = dataset.iloc[:, :-1].values
-y = dataset.iloc[:, 1].values
+#read dataset
+data=pd.read_csv("hours.csv")
+x=data.iloc[:,:-1].values
+y=data.iloc[:,1].values
 
-# Splitting the dataset into the Training set and Test set
-from sklearn.model_selection import train_test_split
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 1/3, random_state = 0)
-
-# Fitting Simple Linear Regression to the Training set
+#import linearregression and create object of it
 from sklearn.linear_model import LinearRegression
 regressor = LinearRegression()
-regressor.fit(X_train, y_train)
-# Predicting the Test set results
-y_pred = regressor.predict(X_test)
-# Visualising the Training set results
-plt.scatter(X_train, y_train, color = 'red')
-plt.plot(X_train, regressor.predict(X_train), color = 'blue')
-plt.title('Driving hours vs Risk Score (Training set)')
-plt.xlabel('Driving Hours')
-plt.ylabel('Risk Score')
+regressor.fit(x,y)
+
+Accuracy=regressor.score(x,y)*100
+Accuracy
+
+#predict value using regressor object
+y_pred=regressor.predict([[10]])
+y_pred
+
+#take user input
+hours=int(input('enter the no of hours'))
+
+#calculate value of y
+eq=regressor.coef_*hours+regressor.intercept_
+eq
+
+print('y=%f*%f+%f ' % (regressor.coef_,hours,regressor.intercept_))
+
+print("Risk Score",eq[0])
+
+plt.plot(x,y,'o')
+plt.plot(x,regressor.predict(x))
 plt.show()
-# Visualising the Test set results
-plt.scatter(X_test, y_test, color = 'green')
-plt.plot(X_train, regressor.predict(X_train), color = 'blue')
-plt.title('Driving Hours vs Risk Score (Test set)')
-plt.xlabel('Driving Hours')
-plt.ylabel('Risk Score')
-plt.show()
-print("")
-print("Equation of best fit line is y = ",regressor.intercept_," + ",regressor.coef_, " * X")
-inputhours = 17
-print("Example driving hours: ",inputhours)
-print("Equation of best fit line is y = ",regressor.intercept_," + ",regressor.coef_, " * ",inputhours)
-outputrisk = regressor.intercept_+regressor.coef_* inputhours
-print("Output RISK Score is: ",outputrisk)
+
 
 #1 #DATASET  @hours_spent(num)	@risk_score(num)
 
@@ -49,44 +44,50 @@ print("Output RISK Score is: ",outputrisk)
 
 ML2-----------------------------------------------------------------
 
+
+
 #import packages
-import numpy as np
-import matplotlib.pyplot as plt
 import pandas as pd
-#reading Dataset
-dataset=pd.read_csv("dtc_data.csv")
-X=dataset.iloc[:,:-1]
-y=dataset.iloc[:,5].values
+import numpy as np
 
-#Perform Label encoding
+dataset=pd.read_csv("tree.csv")
+
+x=dataset.iloc[:,:-1]
+y=dataset.iloc[:,5]
+
+#Label encoder
 from sklearn.preprocessing import LabelEncoder
-labelencoder_X = LabelEncoder()
+le=LabelEncoder()
+x=x.apply(le.fit_transform)
+print(x)
 
-X = X.apply(LabelEncoder().fit_transform)
-print (X)
 
 from sklearn.tree import DecisionTreeClassifier
 regressor=DecisionTreeClassifier()
-regressor.fit(X.iloc[:,1:5],y)
+regressor.fit(x.iloc[:,1:5],y)
+
+x_in=np.array([1,1,0,0])
+y_pred=regressor.predict([x_in])
 
 
-#Predict value for the given expression
-X_in=np.array([1,1,0,0])
-
-y_pred=regressor.predict([X_in])
-print ("Prediction:", y_pred)
-
-from six import StringIO  
-from IPython.display import Image  
+import six
+import sys
+sys.modules['sklearn.externals.six'] = six
+from sklearn.externals.six import StringIO
+from IPython.display import Image
 from sklearn.tree import export_graphviz
 import pydotplus
 
-dot_data = StringIO()
 
-export_graphviz(regressor, out_file=dot_data, filled=True, rounded=True, special_characters=True)
+dot_data=StringIO()
+export_graphviz(regressor,out_file=dot_data,filled=True,rounded=True,special_characters=True)
 
-graph = pydotplus.graph_from_dot_data(dot_data.getvalue()) 
-graph.write_png('tree.png')
+graph=pydotplus.graph_from_dot_data(dot_data.getvalue())
+graph.write_png("tree.png")
+Image(graph.create_png())
+
+
+
 
 #2 #DATASET @id(num)	@age(<21/21-35/>35)	@income(High/Low/Medium)	@gender(Female/Male)	@marital_status(Single/Married)	@buys(Yes/No)
 

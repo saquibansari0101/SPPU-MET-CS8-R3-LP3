@@ -348,310 +348,142 @@ print("\nPlain text =: ", permutation(IPi, left + right))
 
 #ICS2-----------------------------------------------------------------
 
-from Operations import Operations
-class SAES :
+import sys
+ 
+# S-Box
+sBox  = [0x9, 0x4, 0xa, 0xb, 0xd, 0x1, 0x8, 0x5,
+         0x6, 0x2, 0x0, 0x3, 0xc, 0xe, 0xf, 0x7]
+ 
+# Inverse S-Box
+sBoxI = [0xa, 0x5, 0x9, 0xb, 0x1, 0x7, 0x8, 0xf,
+         0x6, 0x0, 0x2, 0x3, 0xc, 0x4, 0xd, 0xe]
+ 
+# Round keys: K0 = w0 + w1; K1 = w2 + w3; K2 = w4 + w5
+w = [None] * 6
+ 
+def mult(p1, p2):
+    """Multiply two polynomials in GF(2^4)/x^4 + x + 1"""
+    p = 0
+    while p2:
+        if p2 & 0b1:
+            p ^= p1
+        p1 <<= 1
+        if p1 & 0b10000:
+            p1 ^= 0b11
+        p2 >>= 1
+    return p & 0b1111
+ 
+def intToVec(n):
+    """Convert a 2-byte integer into a 4-element vector"""
+    return [n >> 12, (n >> 4) & 0xf, (n >> 8) & 0xf,  n & 0xf]            
+ 
+def vecToInt(m):
+    """Convert a 4-element vector into 2-byte integer"""
+    return (m[0] << 12) + (m[2] << 8) + (m[1] << 4) + m[3]
+ 
+def addKey(s1, s2):
+    """Add two keys in GF(2^4)"""  
+    return [i ^ j for i, j in zip(s1, s2)]
+     
+def sub4NibList(sbox, s):
+    """Nibble substitution function"""
+    return [sbox[e] for e in s]
+     
+def shiftRow(s):
+    """ShiftRow function"""
+    return [s[0], s[1], s[3], s[2]]
+ 
+def keyExp(key):
+    """Generate the three round keys"""
+    def sub2Nib(b):
+        """Swap each nibble and substitute it using sBox"""
+        return sBox[b >> 4] + (sBox[b & 0x0f] << 4)
+ 
+    Rcon1, Rcon2 = 0b10000000, 0b00110000
+    w[0] = (key & 0xff00) >> 8
+    w[1] = key & 0x00ff
+    w[2] = w[0] ^ Rcon1 ^ sub2Nib(w[1])
+    w[3] = w[2] ^ w[1]
+    w[4] = w[2] ^ Rcon2 ^ sub2Nib(w[3])
+    w[5] = w[4] ^ w[3]
+ 
+def encrypt(ptext):
+    """Encrypt plaintext block"""
+    def mixCol(s):
+        return [s[0] ^ mult(4, s[2]), s[1] ^ mult(4, s[3]),
+                s[2] ^ mult(4, s[0]), s[3] ^ mult(4, s[1])]    
+     
+    state = intToVec(((w[0] << 8) + w[1]) ^ ptext)
+    state = mixCol(shiftRow(sub4NibList(sBox, state)))
+    state = addKey(intToVec((w[2] << 8) + w[3]), state)
+    state = shiftRow(sub4NibList(sBox, state))
+    return vecToInt(addKey(intToVec((w[4] << 8) + w[5]), state))
+     
+def decrypt(ctext):
+    """Decrypt ciphertext block"""
+    def iMixCol(s):
+        return [mult(9, s[0]) ^ mult(2, s[2]), mult(9, s[1]) ^ mult(2, s[3]),
+                mult(9, s[2]) ^ mult(2, s[0]), mult(9, s[3]) ^ mult(2, s[1])]
+     
+    state = intToVec(((w[4] << 8) + w[5]) ^ ctext)
+    state = sub4NibList(sBoxI, shiftRow(state))
+    state = iMixCol(addKey(intToVec((w[2] << 8) + w[3]), state))
+    state = sub4NibList(sBoxI, shiftRow(state))
+    return vecToInt(addKey(intToVec((w[0] << 8) + w[1]), state))
+ 
+if __name__ == '__main__':
+    # Test vectors from "Simplified AES" (Steven Gordon)
+    # (http://hw.siit.net/files/001283.pdf)
+     
+    plaintext = 0b1101011100101000
+    key = 0b0100101011110101
+    ciphertext = 0b0010010011101100
+    keyExp(key)
+    try:
+        assert encrypt(plaintext) == ciphertext
+    except AssertionError:
+        print("Encryption error")
+        print(encrypt(plaintext), ciphertext)
+        sys.exit(1)
+    try:
+        assert decrypt(ciphertext) == plaintext
+    except AssertionError:
+        print("Decryption error")
+        print(decrypt(ciphertext), plaintext)
+        sys.exit(1)
+    print("Test ok!")
+    sys.exit()
 
-    plaintext_block_size = 16
-    key_size = 16
-    no_of_rounds = 2
-    substitution_box = {
-        '0000': '1001', 
-        '0001': '0100',
-        '0010': '1010',
-        '0011': '1011',
-        '0100': '1101',
-        '0101': '0001',
-        '0110': '1000',
-        '0111': '0101',
-        '1000': '0110',
-        '1001': '0010',
-        '1010': '0000',
-        '1011': '0011',
-        '1100': '1100',
-        '1101': '1110',
-        '1110': '1111',
-        '1111': '0111',
-    }
-    inv_substitution_box = {
-        '1001': '0000', 
-        '0100': '0001',
-        '1010': '0010',
-        '1011': '0011',
-        '1101': '0100',
-        '0001': '0101',
-        '1000': '0110',
-        '0101': '0111',
-        '0110': '1000',
-        '0010': '1001',
-        '0000': '1010',
-        '0011': '1011',
-        '1100': '1100',
-        '1110': '1101',
-        '1111': '1110',
-        '0111': '1111',
-    }
-
-    mix_column_table = {
-        '2': '02468ACE3175B9FD',
-        '4': '048C37BF62EA51D9',
-        '9': '09182B3A4D5C6F7E'
-    }
-    mix_column_matrix = [[1, 4], [4, 1]]
-    inv_mix_column_matrix = [[9, 2], [2, 9]]
-    round_constants = ['80', '30']
-    is_padded = False
-
-    @classmethod
-    def __perform_substitution(cls, data, substitution_box) :
-        binary_rep = "{:08b}".format(data)
-        ans = cls.substitution_box[binary_rep[:4]] + cls.substitution_box[binary_rep[4:]]
-        return int(ans, 2)
-
-    @classmethod
-    def generate_subkeys(cls, key) :
-        binary_rep = "{:016b}".format(key)
-        subkeys = []
-        subkeys.append(int(binary_rep[:8], 2))
-        subkeys.append(int(binary_rep[8:], 2))
-
-        for i in range(cls.no_of_rounds) :
-            temp = Operations.circular_left_shift(subkeys[-1], 4, 8)
-            temp = cls.__perform_substitution(temp, cls.substitution_box)
-            temp = Operations.xor_operation(temp, int(cls.round_constants[i], 16))
-            key1 = Operations.xor_operation(temp, subkeys[-2])
-            subkeys.append(key1)
-            key2 = Operations.xor_operation(subkeys[-2], subkeys[-1])
-            subkeys.append(key2)
-            
-        return subkeys
-            
-
-    @classmethod
-    def __initial_round(cls, plaintext_blocks, keys) :
-        joint_key = int("{:08b}".format(keys[0]) + "{:08b}".format(keys[1]), 2)
-        result_blocks = []
-        for i in plaintext_blocks :
-            xored = Operations.xor_operation(int(i, 2), joint_key)
-            xored = "{:016b}".format(xored)
-            result_blocks.append(xored)
-        
-        return result_blocks
-
-    @classmethod
-    def __convert_into_matrix(cls, plaintext_blocks) :
-        plaintext_matrix = []
-        for i in range(len(plaintext_blocks)) :
-            plaintext_matrix.append([[0, 0], [0, 0]])
-
-        for i in range(len(plaintext_blocks)) :
-            plaintext_matrix[i][0][0] = plaintext_blocks[i][:4]
-            plaintext_matrix[i][1][0] = plaintext_blocks[i][4:8]
-            plaintext_matrix[i][0][1] = plaintext_blocks[i][8:12]
-            plaintext_matrix[i][1][1] = plaintext_blocks[i][12:]
-        return plaintext_matrix
-
-    @classmethod
-    def __perform_encryption_round(cls, plaintext_blocks, keys, round_number) :
-
-        b0 = (keys[0] & 0xF0) >> 4
-        b1 = keys[0] & 0x0F
-        b2 = (keys[1] & 0xF0) >> 4
-        b3 = keys[1] & 0x0F
-
-        # Subsitution
-        for i in range(len(plaintext_blocks)) :
-            plaintext_blocks[i][0][0] = int(cls.substitution_box[plaintext_blocks[i][0][0]], 2)
-            plaintext_blocks[i][1][0] = int(cls.substitution_box[plaintext_blocks[i][1][0]], 2)
-            plaintext_blocks[i][0][1] = int(cls.substitution_box[plaintext_blocks[i][0][1]], 2)
-            plaintext_blocks[i][1][1] = int(cls.substitution_box[plaintext_blocks[i][1][1]], 2)
-
-        # Shift Rows
-        for i in range(len(plaintext_blocks)) :
-            plaintext_blocks[i][1][0], plaintext_blocks[i][1][1] = \
-                plaintext_blocks[i][1][1], plaintext_blocks[i][1][0]
-
-        # Mix columns
-        if round_number == 1 :
-            for i in range(len(plaintext_blocks)) :
-                first_operand = plaintext_blocks[i][0][0]
-                second_operand = int(cls.mix_column_table['4'][plaintext_blocks[i][1][0]], 16)
-                val1 = Operations.xor_operation(first_operand, second_operand)
-
-                first_operand = plaintext_blocks[i][0][1]
-                second_operand = int(cls.mix_column_table['4'][plaintext_blocks[i][1][1]], 16)
-                val2 = Operations.xor_operation(first_operand, second_operand)
-
-                first_operand = int(cls.mix_column_table['4'][plaintext_blocks[i][0][0]], 16)
-                second_operand = plaintext_blocks[i][1][0]
-                val3 = Operations.xor_operation(first_operand, second_operand)
-
-                first_operand = int(cls.mix_column_table['4'][plaintext_blocks[i][0][1]], 16)
-                second_operand = plaintext_blocks[i][1][1]
-                val4 = Operations.xor_operation(first_operand, second_operand)
-    
-                plaintext_blocks[i][0][0] = val1
-                plaintext_blocks[i][0][1] = val2
-                plaintext_blocks[i][1][0] = val3
-                plaintext_blocks[i][1][1] = val4
-
-        # Add round key
-        for i in range(len(plaintext_blocks)) :
-            plaintext_blocks[i][0][0] = "{:04b}".format(Operations.xor_operation( \
-                plaintext_blocks[i][0][0], b0))
-            plaintext_blocks[i][1][0] = "{:04b}".format(Operations.xor_operation( \
-                plaintext_blocks[i][1][0], b1))
-            plaintext_blocks[i][0][1] = "{:04b}".format(Operations.xor_operation( \
-                plaintext_blocks[i][0][1], b2))
-            plaintext_blocks[i][1][1] = "{:04b}".format(Operations.xor_operation( \
-                plaintext_blocks[i][1][1], b3))
-
-        return plaintext_blocks
-
-    @classmethod
-    def encrypt(cls, plaintext, keys) :
-        if len(plaintext) % 2 :
-            plaintext = plaintext + '0'
-            cls.is_padded = True
-        
-        plaintext_blocks = []
-        for i in range(0, len(plaintext), 2) :
-            temp = "{:08b}".format(ord(plaintext[i])) + "{:08b}".format(ord(plaintext[i + 1]))
-            plaintext_blocks.append(temp)
-
-        plaintext_blocks = cls.__initial_round(plaintext_blocks, keys[0:2])
-        plaintext_matrix = cls.__convert_into_matrix(plaintext_blocks)
-        plaintext_matrix = cls.__perform_encryption_round(plaintext_matrix, keys[2:4], 1)
-        plaintext_matrix = cls.__perform_encryption_round(plaintext_matrix, keys[4:], 2)
-        
-        ciphertext = []
-        for i in plaintext_matrix :
-            x = i[0][0]+ i[1][0] + i[0][1] + i[1][1]
-            ciphertext.append(x)
-        return ciphertext
-
-        
-    @classmethod
-    def __perform_decryption_round(cls, ciphertext_matrix, keys, round_number) :
-        b0 = (keys[0] & 0xF0) >> 4
-        b1 = keys[0] & 0x0F
-        b2 = (keys[1] & 0xF0) >> 4
-        b3 = keys[1] & 0x0F
-
-        # Inverse shift rows
-        for i in range(len(ciphertext_matrix)) :
-            ciphertext_matrix[i][1][0], ciphertext_matrix[i][1][1] = \
-                ciphertext_matrix[i][1][1], ciphertext_matrix[i][1][0]
-
-        # Inverse Substitution
-        for i in range(len(ciphertext_matrix)) :
-            ciphertext_matrix[i][0][0] = int(cls.inv_substitution_box[ciphertext_matrix[i][0][0]], 2)
-            ciphertext_matrix[i][1][0] = int(cls.inv_substitution_box[ciphertext_matrix[i][1][0]], 2)
-            ciphertext_matrix[i][0][1] = int(cls.inv_substitution_box[ciphertext_matrix[i][0][1]], 2)
-            ciphertext_matrix[i][1][1] = int(cls.inv_substitution_box[ciphertext_matrix[i][1][1]], 2)
-
-        # Add round key
-        for i in range(len(ciphertext_matrix)) :
-            ciphertext_matrix[i][0][0] = Operations.xor_operation(ciphertext_matrix[i][0][0], b0)
-            ciphertext_matrix[i][1][0] = Operations.xor_operation(ciphertext_matrix[i][1][0], b1)
-            ciphertext_matrix[i][0][1] = Operations.xor_operation(ciphertext_matrix[i][0][1], b2)
-            ciphertext_matrix[i][1][1] = Operations.xor_operation(ciphertext_matrix[i][1][1], b3)
-
-        # Inverse mix columns
-        if round_number == 1 :
-            for i in range(len(ciphertext_matrix)) :
-                first_operand = int(cls.mix_column_table['9'][ciphertext_matrix[i][0][0]], 16)
-                second_operand = int(cls.mix_column_table['2'][ciphertext_matrix[i][1][0]], 16)
-                val1 = Operations.xor_operation(first_operand, second_operand)
-
-                first_operand = int(cls.mix_column_table['9'][ciphertext_matrix[i][0][1]], 16)
-                second_operand = int(cls.mix_column_table['2'][ciphertext_matrix[i][1][1]], 16)
-                val2 = Operations.xor_operation(first_operand, second_operand)
-
-                first_operand = int(cls.mix_column_table['2'][ciphertext_matrix[i][0][0]], 16)
-                second_operand = int(cls.mix_column_table['9'][ciphertext_matrix[i][1][0]], 16)
-                val3 = Operations.xor_operation(first_operand, second_operand)
-
-                first_operand = int(cls.mix_column_table['2'][ciphertext_matrix[i][0][1]], 16)
-                second_operand = int(cls.mix_column_table['9'][ciphertext_matrix[i][1][1]], 16)
-                val4 = Operations.xor_operation(first_operand, second_operand)
-    
-                ciphertext_matrix[i][0][0] = val1
-                ciphertext_matrix[i][0][1] = val2
-                ciphertext_matrix[i][1][0] = val3
-                ciphertext_matrix[i][1][1] = val4
-
-        for i in range(len(ciphertext_matrix)) :
-            ciphertext_matrix[i][0][0] = "{:04b}".format(ciphertext_matrix[i][0][0])
-            ciphertext_matrix[i][1][0] = "{:04b}".format(ciphertext_matrix[i][1][0])
-            ciphertext_matrix[i][0][1] = "{:04b}".format(ciphertext_matrix[i][0][1])
-            ciphertext_matrix[i][1][1] = "{:04b}".format(ciphertext_matrix[i][1][1])
-
-        return ciphertext_matrix
-
-
-    @classmethod
-    def decrypt(cls, ciphertext, keys) :
-        ciphertext_blocks = []
-        for i in ciphertext :
-            ciphertext_blocks.append("{:016b}".format(int(i, 16)))
-
-        ciphertext_blocks = SAES.__initial_round(ciphertext_blocks, keys[0:2])
-        ciphertext_matrix = SAES.__convert_into_matrix(ciphertext_blocks)
-        ciphertext_matrix = SAES.__perform_decryption_round(ciphertext_matrix, keys[2:4], 1)
-        plaintext_matrix = SAES.__perform_decryption_round(ciphertext_matrix, keys[4:], 2)
-
-        plaintext = []
-        for i in plaintext_matrix :
-            x = i[0][0]+ i[1][0] + i[0][1] + i[1][1]
-            plaintext.append(x)
-
-        if cls.is_padded :
-            plaintext[-1] = plaintext[-1][:-7]
-
-        return plaintext
 
 
 #ICS3-----------------------------------------------------------------
 
 from random import randint
 
-if __name__ == '__main__':
-
-	# Both the persons will be agreed upon the
-	# public keys G and P
-	# A prime number P is taken
-	P = 23
+P = 23
 	
-	# A primitve root for P, G is taken
-	G = 9
+G = 9
+		
+print('The Value of P is :%d'%(P))
+print('The Value of G is :%d'%(G))
 	
+a = 4
+print('The Private Key a for Alice is :%d'%(a))
 	
-	print('The Value of P is :%d'%(P))
-	print('The Value of G is :%d'%(G))
+x = int(pow(G,a,P))
 	
-	# Alice will choose the private key a
-	a = 4
-	print('The Private Key a for Alice is :%d'%(a))
+b = 3
+print('The Private Key b for Bob is :%d'%(b))
 	
-	# gets the generated key
-	x = int(pow(G,a,P))
+y = int(pow(G,b,P))
 	
-	# Bob will choose the private key b
-	b = 3
-	print('The Private Key b for Bob is :%d'%(b))
+ka = int(pow(y,a,P))
 	
-	# gets the generated key
-	y = int(pow(G,b,P))
+kb = int(pow(x,b,P))
 	
+print('Secret key for the Alice is : %d'%(ka))
+print('Secret Key for the Bob is : %d'%(kb))
 	
-	# Secret key for Alice
-	ka = int(pow(y,a,P))
-	
-	# Secret key for Bob
-	kb = int(pow(x,b,P))
-	
-	print('Secret key for the Alice is : %d'%(ka))
-	print('Secret Key for the Bob is : %d'%(kb))
 
 
 #ICS4-----------------------------------------------------------------

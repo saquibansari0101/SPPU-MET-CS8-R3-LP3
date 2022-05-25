@@ -89,7 +89,7 @@ Image(graph.create_png())
 
 
 
-#2 #DATASET @id(num)	@age(<21/21-35/>35)	@income(High/Low/Medium)	@gender(Female/Male)	@marital_status(Single/Married)	@buys(Yes/No)
+#2 #DATASET @id(num)	@age(0/1/2)	@income(0/1/2)	@marital_status(0/1)
 
 
 
